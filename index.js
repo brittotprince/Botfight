@@ -39,9 +39,9 @@ function fillGridOrg(move, pieceToBeMoved) {
         gridState[pointBeingChaged] = 1
     })
 }
-function getNewCenter(pieceToBeMoved, oldData) {
+function getNewCenter(pieceToBeMoved, oldData,flipped) {
     let index = oldData.findIndex((data) => data === pieceToBeMoved.centre)
-    pieceToBeMoved.centre = pieceToBeMoved.data[index]
+    flipped.centre = flipped.data[index]
 }
 function flipThePiece(pieceToBeMoved) {
     let oldData = pieceToBeMoved.data
@@ -50,10 +50,13 @@ function flipThePiece(pieceToBeMoved) {
         data.push(`${eachPoint[0]}${eachPoint[1] !== "0" ? parseInt(10 - eachPoint[1]) : 0}`)
     })
     console.log(data)
-    pieceToBeMoved.data = data
-    getNewCenter(pieceToBeMoved, oldData)
-    return pieceToBeMoved
+    flipped ={id:pieceToBeMoved.id,data : data}
+    getNewCenter(pieceToBeMoved, oldData,flipped)
+    return flipped
 }
+let printData = pieceNames.map((piece) => flipThePiece(piece))
+console.log("printData")
+console.dir(printData)
 function fillGrid(data) {
     const move = getProperDataFromINput(data)
     console.log("move", move)
