@@ -39,24 +39,29 @@ function fillGridOrg(move, pieceToBeMoved) {
         gridState[pointBeingChaged] = 1
     })
 }
-function getNewCenter(pieceToBeMoved, oldData,flipped) {
-    let index = oldData.findIndex((data) => data === pieceToBeMoved.centre)
-    flipped.centre = flipped.data[index]
-}
+// function getNewCenter(pieceToBeMoved, oldData) {
+//     let index = oldData.findIndex((data) => data === pieceToBeMoved.centre)
+//     pieceToBeMoved.centre = pieceToBeMoved.data[index]
+// }
+
+// Was used to flip the components. Removing it as it has edge cases like piece 19
+// function flipThePiece(pieceToBeMoved) {
+//     let oldData = pieceToBeMoved.data
+//     let data = []
+//     oldData.forEach((eachPoint) => {
+//         data.push(`${eachPoint[0]}${eachPoint[1] !== "0" ? parseInt(10 - eachPoint[1]) : 0}`)
+//     })
+//     console.log(data)
+//     pieceToBeMoved.data = data
+//     getNewCenter(pieceToBeMoved, oldData)
+//     return pieceToBeMoved
+// }
+
 function flipThePiece(pieceToBeMoved) {
-    let oldData = pieceToBeMoved.data
-    let data = []
-    oldData.forEach((eachPoint) => {
-        data.push(`${eachPoint[0]}${eachPoint[1] !== "0" ? parseInt(10 - eachPoint[1]) : 0}`)
-    })
-    console.log(data)
-    flipped ={id:pieceToBeMoved.id,data : data}
-    getNewCenter(pieceToBeMoved, oldData,flipped)
-    return flipped
+    pieceToBeMoved.data = pieceToBeMoved?.flipped?.data ?? pieceToBeMoved.data
+    pieceToBeMoved.center = pieceToBeMoved?.flipped?.center ?? pieceToBeMoved.center
+    return pieceToBeMoved
 }
-let printData = pieceNames.map((piece) => flipThePiece(piece))
-console.log("printData")
-console.dir(printData)
 function fillGrid(data) {
     const move = getProperDataFromINput(data)
     console.log("move", move)

@@ -1,0 +1,7 @@
+filp of 14 -> [00,10,11,12,22] -> centre 11
+flip of 17 -> [00,01,11,12,22] -> centre 10
+flip of 19 -> [00,01,11,12,21] -> centre 11
+MAKE_MOVE
+
+rotate of 5 by 1 -> 00 01 02 03 04 -> centre 00
+rotate of 8 by 1 -> 00 10 11 21
