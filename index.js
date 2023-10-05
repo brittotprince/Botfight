@@ -26,7 +26,7 @@ function handleNegativeIndexing(index) {
 function updateState(pointBeingChaged, isMoveByUs) {
     gridState[pointBeingChaged] = isMoveByUs ? 1 : 2
 }
-function checkIfValidPoint(pointToCheck) {
+function checkIfValidPoint(pointToCheck, shouldSaveCorners) {
     let arrOfCornerConnections = []
     let cornerConnectionExist = false
     let [rowPoint, colPoint] = pointToCheck.split("_")
@@ -41,6 +41,9 @@ function checkIfValidPoint(pointToCheck) {
         rowPointConsidered = rowPoint + i
         for (let j = -1; j <= 1; j++) {
             colPointConsidered = colPoint + j
+            if (colPointConsidered < 0 || rowPointConsidered < 0 || colPointConsidered > 13 || rowPointConsidered > 13) {
+                continue
+            }
             if ((i == 0 || j == 0) // Edges
                 && gridState[`${rowPointConsidered}_${colPointConsidered}`] === 1
             ) {
@@ -49,7 +52,7 @@ function checkIfValidPoint(pointToCheck) {
                 if (gridState[`${rowPointConsidered}_${colPointConsidered}`] === 1) {
                     cornerConnectionExist = true
                     console.log(`corner connection exists for the piece at ${rowPointConsidered}_${colPointConsidered}`)
-                } else {
+                } else if (shouldSaveCorners) {
                     pointBeingChecked = `${rowPoint}_${colPoint}` //4_5
                     freeCornerPoint = `${rowPointConsidered}_${colPointConsidered}` //5_6
                     yCorner = rowPoint - rowPointConsidered > 0 ? "T" : "B"
@@ -59,7 +62,16 @@ function checkIfValidPoint(pointToCheck) {
             }
         }
     }
-    return { validPoint: true, cornerConnectionExist,arrOfCornerConnections}
+    return { validPoint: true, cornerConnectionExist, arrOfCornerConnections }
+}
+function checkIfCornerStillExists(corner) {
+    let data = corner.split("_")
+    let rowIndex = data[0]
+    let colIndex = data[1]
+    let rowMove = data[0] === "T" ? -1 : 1
+    let colMove = data[1] === "L" ? -1 : 1
+    let pointToCheck = (`${rowIndex + rowMove}_${colIndex + colMove}`)
+    return gridState[pointToCheck] === 0
 }
 function fillGridOrg(move, pieceToBeMoved, isMoveByUs, updateGrid, validateEachPoint) {
     // set updateGrid as false to run a check
@@ -80,11 +92,13 @@ function fillGridOrg(move, pieceToBeMoved, isMoveByUs, updateGrid, validateEachP
         pointsToChange.push(pointBeingChaged)
         console.log(pointBeingChaged)
         if (isMoveByUs && validateEachPoint) {
-            let returnValue = checkIfValidPoint(pointBeingChaged)
+            let returnValue = checkIfValidPoint(pointBeingChaged, updateGrid)
             if (returnValue.cornerConnectionExist) {
                 cornerConnectionExist = true
             }
-            arrOfCornerConnections+=returnValue.arrOfCornerConnections
+            if (updateGrid) {
+                arrOfCornerConnections = arrOfCornerConnections.concat(returnValue.arrOfCornerConnections)
+            }
         }
     })
     console.log(arrOfCornerConnections)
@@ -97,6 +111,10 @@ function fillGridOrg(move, pieceToBeMoved, isMoveByUs, updateGrid, validateEachP
             updateState(pointBeingChaged, isMoveByUs)
         })
         printTable()
+        arrOfCornerConnections.filter((corner) => {
+            return checkIfCornerStillExists(corner)
+        })
+        console.log(arrOfCornerConnections)
     }
 }
 // function getNewCenter(pieceToBeMoved, oldData) {
