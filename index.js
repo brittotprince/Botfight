@@ -68,17 +68,17 @@ function fillGridOrg(move, pieceToBeMoved, isMoveByUs, updateGrid, validateEachP
         let currentPointinY = handleNegativeIndexing(parseInt(point[1]))
         let pointsToMoveInRow = centreOfPieceInX - currentPointinX
         let pointsToMoveInCol = centreOfPieceInY - currentPointinY
-        let pointBeingChaged = `${move.row + pointsToMoveInRow}_${move.col + pointsToMoveInCol}`
+        let pointBeingChaged = `${move.row - pointsToMoveInRow}_${move.col - pointsToMoveInCol}`
         pointsToChange.push(pointBeingChaged)
         console.log(pointBeingChaged)
         if (isMoveByUs && validateEachPoint) {
             let returnValue = checkIfValidPoint(pointBeingChaged)
-            if(returnValue.cornerConnectionExist){
+            if (returnValue.cornerConnectionExist) {
                 cornerConnectionExist = true
             }
         }
     })
-    if(validateEachPoint && !cornerConnectionExist){
+    if (validateEachPoint && !cornerConnectionExist) {
         throw (`No corner connection exists for the piece id ${pieceToBeMoved.id}`)
     }
 
@@ -124,17 +124,33 @@ function fillGrid(data, isMoveByUs, validateEachPoint) {
 
     fillGridOrg(move, pieceToBeMoved, isMoveByUs, true, validateEachPoint)
 }
+function checkIfGridPointIsUsed(row, col) {
+    return gridState[`${row}_${col}`] !== 0
+}
 
 function fight(input, myMovesCount) {
     let moveSuggested
     if (input === "MAKE_MOVE") {
         try {
             moveSuggested = "5 0 0 4 4"
-            fillGrid(moveSuggested, true, myMovesCount === 0)
+            fillGrid(moveSuggested, true, false)
         } catch (e) {
+            console.log("Shouldn't happen")
             console.log(e)
+            return 0
         }
-    } else if (myMovesCount === 0) {
+    } else {
+        if (input[0] === "O") {
+            let opponentMove = input.replace(/OPPONENT_MOVE\s*/,"")
+            fillGrid(opponentMove, false,false)
+        }
+        //This is totally different check. Not else
+        if (myMovesCount === 0) {
+            if (!checkIfGridPointIsUsed(5, 5)) {
+                moveSuggested = "5 0 0 4 4"
+                fillGrid(moveSuggested, true, true)
+            }
+        }
     }
     myMovesCount += 1
     return moveSuggested
