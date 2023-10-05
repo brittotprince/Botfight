@@ -39,6 +39,10 @@ function fillGridOrg(move, pieceToBeMoved) {
         gridState[pointBeingChaged] = 1
     })
 }
+function getNewCenter(pieceToBeMoved, oldData) {
+    let index = oldData.findIndex((data) => data === pieceToBeMoved.centre)
+    pieceToBeMoved.centre = pieceToBeMoved.data[index]
+}
 function flipThePiece(pieceToBeMoved) {
     let oldData = pieceToBeMoved.data
     let data = []
@@ -46,6 +50,8 @@ function flipThePiece(pieceToBeMoved) {
         data.push(`${eachPoint[0]}${eachPoint[1] !== "0" ? parseInt(10 - eachPoint[1]) : 0}`)
     })
     console.log(data)
+    pieceToBeMoved.data = data
+    getNewCenter(pieceToBeMoved, oldData)
     return pieceToBeMoved
 }
 function fillGrid(data) {
@@ -62,14 +68,14 @@ function fillGrid(data) {
 }
 
 function fight(input, movesCount) {
+    let moveSuggested
     if (input === "MAKE_MOVE") {
-        let moveSuggested = "14 1 0 4 4"
+        moveSuggested= "5 0 0 4 4"
         fillGrid(moveSuggested)
-        return moveSuggested
     } else if (movesCount === 0) {
-        return
     }
     movesCount += 1
+    return moveSuggested
 }
 function getInputReader() {
     var readline = require('readline');
@@ -85,7 +91,8 @@ function main() {
     movesCount = 0
     let reader = getInputReader()
     reader.on('line', (line) => {
-        fight(line, movesCount)
+        let suggestedMove = fight(line, movesCount)
+        process.stdout.write(suggestedMove); 
     });
 }
 main()
