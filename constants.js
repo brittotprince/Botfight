@@ -61,6 +61,8 @@ const pieceNames = [
     }
 ];
 
+const freeCorners = []
+
 const gridState = {
     "0_0": 0,
     "0_1": 0,
@@ -260,4 +262,4 @@ const gridState = {
     "13_13": 0
 
 }
-module.exports = { gridState, pieceNames }
+module.exports = { gridState, pieceNames ,freeCorners}

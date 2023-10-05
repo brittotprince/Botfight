@@ -27,6 +27,7 @@ function updateState(pointBeingChaged, isMoveByUs) {
     gridState[pointBeingChaged] = isMoveByUs ? 1 : 2
 }
 function checkIfValidPoint(pointToCheck) {
+    let arrOfCornerConnections = []
     let cornerConnectionExist = false
     let [rowPoint, colPoint] = pointToCheck.split("_")
     rowPoint = parseInt(rowPoint)
@@ -48,11 +49,17 @@ function checkIfValidPoint(pointToCheck) {
                 if (gridState[`${rowPointConsidered}_${colPointConsidered}`] === 1) {
                     cornerConnectionExist = true
                     console.log(`corner connection exists for the piece at ${rowPointConsidered}_${colPointConsidered}`)
+                } else {
+                    pointBeingChecked = `${rowPoint}_${colPoint}` //4_5
+                    freeCornerPoint = `${rowPointConsidered}_${colPointConsidered}` //5_6
+                    yCorner = rowPoint - rowPointConsidered > 0 ? "T" : "B"
+                    xCorner = colPoint - colPointConsidered > 0 ? "L" : "R"
+                    arrOfCornerConnections.push(pointBeingChecked + "_" + yCorner + "_" + xCorner)
                 }
             }
         }
     }
-    return { validPoint: true, cornerConnectionExist }
+    return { validPoint: true, cornerConnectionExist,arrOfCornerConnections}
 }
 function fillGridOrg(move, pieceToBeMoved, isMoveByUs, updateGrid, validateEachPoint) {
     // set updateGrid as false to run a check
@@ -63,6 +70,7 @@ function fillGridOrg(move, pieceToBeMoved, isMoveByUs, updateGrid, validateEachP
 
     let pointsToChange = []
     let cornerConnectionExist = false
+    let arrOfCornerConnections = []
     pieceToBeMoved.data.forEach((point) => {
         let currentPointinX = handleNegativeIndexing(parseInt(point[0]))
         let currentPointinY = handleNegativeIndexing(parseInt(point[1]))
@@ -76,8 +84,10 @@ function fillGridOrg(move, pieceToBeMoved, isMoveByUs, updateGrid, validateEachP
             if (returnValue.cornerConnectionExist) {
                 cornerConnectionExist = true
             }
+            arrOfCornerConnections+=returnValue.arrOfCornerConnections
         }
     })
+    console.log(arrOfCornerConnections)
     if (validateEachPoint && !cornerConnectionExist) {
         throw (`No corner connection exists for the piece id ${pieceToBeMoved.id}`)
     }
@@ -133,7 +143,7 @@ function fight(input, myMovesCount) {
     if (input === "MAKE_MOVE") {
         try {
             moveSuggested = "5 0 0 4 4"
-            fillGrid(moveSuggested, true, false)
+            fillGrid(moveSuggested, true, true)
         } catch (e) {
             console.log("Shouldn't happen")
             console.log(e)
@@ -141,15 +151,17 @@ function fight(input, myMovesCount) {
         }
     } else {
         if (input[0] === "O") {
-            let opponentMove = input.replace(/OPPONENT_MOVE\s*/,"")
-            fillGrid(opponentMove, false,false)
+            let opponentMove = input.replace(/OPPONENT_MOVE\s*/, "")
+            fillGrid(opponentMove, false, false)
         }
-        //This is totally different check. Not else
+        //This is totally different check. should not use else
         if (myMovesCount === 0) {
             if (!checkIfGridPointIsUsed(5, 5)) {
-                moveSuggested = "5 0 0 4 4"
-                fillGrid(moveSuggested, true, true)
+                moveSuggested = "5 0 2 4 4"
+            } else {
+                moveSuggested = "5 0 0 8 8"
             }
+            fillGrid(moveSuggested, true, true)
         }
     }
     myMovesCount += 1
