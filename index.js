@@ -23,21 +23,71 @@ function getProperDataFromINput(input) {
 function handleNegativeIndexing(index) {
     return index > 5 ? index - 10 : index
 }
-function fillGridOrg(move, pieceToBeMoved) {
+function updateState(pointBeingChaged, isMoveByUs) {
+    gridState[pointBeingChaged] = isMoveByUs ? 1 : 2
+}
+function checkIfValidPoint(pointToCheck) {
+    let cornerConnectionExist = false
+    let [rowPoint, colPoint] = pointToCheck.split("_")
+    rowPoint = parseInt(rowPoint)
+    colPoint = parseInt(colPoint)
+    if (gridState[`${rowPoint}_${colPoint}`] !== 0) {
+        throw ("Point not empty")
+    }
+    let rowPointConsidered
+    let colPointConsidered
+    for (let i = -1; i <= 1; i++) {
+        rowPointConsidered = rowPoint + i
+        for (let j = -1; j <= 1; j++) {
+            colPointConsidered = colPoint + j
+            if ((i == 0 || j == 0) // Edges
+                && gridState[`${rowPointConsidered}_${colPointConsidered}`] === 1
+            ) {
+                throw (`Edge exits for ${rowPoint}_${colPoint} at ${rowPointConsidered}_${colPointConsidered}`)
+            } else {
+                if (gridState[`${rowPointConsidered}_${colPointConsidered}`] === 1) {
+                    cornerConnectionExist = true
+                    console.log(`corner connection exists for the piece at ${rowPointConsidered}_${colPointConsidered}`)
+                }
+            }
+        }
+    }
+    return { validPoint: true, cornerConnectionExist }
+}
+function fillGridOrg(move, pieceToBeMoved, isMoveByUs, updateGrid, validateEachPoint) {
+    // set updateGrid as false to run a check
     let centreOfPieceInX = parseInt(pieceToBeMoved.centre[0])
     let centreOfPieceInY = parseInt(pieceToBeMoved.centre[1])
     centreOfPieceInX = handleNegativeIndexing(centreOfPieceInX)
     centreOfPieceInY = handleNegativeIndexing(centreOfPieceInY)
 
+    let pointsToChange = []
+    let cornerConnectionExist = false
     pieceToBeMoved.data.forEach((point) => {
         let currentPointinX = handleNegativeIndexing(parseInt(point[0]))
         let currentPointinY = handleNegativeIndexing(parseInt(point[1]))
         let pointsToMoveInRow = centreOfPieceInX - currentPointinX
         let pointsToMoveInCol = centreOfPieceInY - currentPointinY
         let pointBeingChaged = `${move.row + pointsToMoveInRow}_${move.col + pointsToMoveInCol}`
+        pointsToChange.push(pointBeingChaged)
         console.log(pointBeingChaged)
-        gridState[pointBeingChaged] = 1
+        if (isMoveByUs && validateEachPoint) {
+            let returnValue = checkIfValidPoint(pointBeingChaged)
+            if(returnValue.cornerConnectionExist){
+                cornerConnectionExist = true
+            }
+        }
     })
+    if(validateEachPoint && !cornerConnectionExist){
+        throw (`No corner connection exists for the piece id ${pieceToBeMoved.id}`)
+    }
+
+    if (updateGrid) {
+        pointsToChange.forEach((pointBeingChaged) => {
+            updateState(pointBeingChaged, isMoveByUs)
+        })
+        printTable()
+    }
 }
 // function getNewCenter(pieceToBeMoved, oldData) {
 //     let index = oldData.findIndex((data) => data === pieceToBeMoved.centre)
@@ -62,7 +112,7 @@ function flipThePiece(pieceToBeMoved) {
     pieceToBeMoved.center = pieceToBeMoved?.flipped?.center ?? pieceToBeMoved.center
     return pieceToBeMoved
 }
-function fillGrid(data) {
+function fillGrid(data, isMoveByUs, validateEachPoint) {
     const move = getProperDataFromINput(data)
     console.log("move", move)
     let pieceToBeMoved = pieceNames.filter(piece => piece.id === move.id)?.[0]
@@ -71,18 +121,22 @@ function fillGrid(data) {
     if (move.flip) {
         pieceToBeMoved = flipThePiece(pieceToBeMoved)
     }
-    fillGridOrg(move, pieceToBeMoved)
-    printTable()
+
+    fillGridOrg(move, pieceToBeMoved, isMoveByUs, true, validateEachPoint)
 }
 
-function fight(input, movesCount) {
+function fight(input, myMovesCount) {
     let moveSuggested
     if (input === "MAKE_MOVE") {
-        moveSuggested= "5 0 0 4 4"
-        fillGrid(moveSuggested)
-    } else if (movesCount === 0) {
+        try {
+            moveSuggested = "5 0 0 4 4"
+            fillGrid(moveSuggested, true, myMovesCount === 0)
+        } catch (e) {
+            console.log(e)
+        }
+    } else if (myMovesCount === 0) {
     }
-    movesCount += 1
+    myMovesCount += 1
     return moveSuggested
 }
 function getInputReader() {
@@ -96,11 +150,13 @@ function getInputReader() {
     return reader
 }
 function main() {
-    movesCount = 0
+    myMovesCount = 0
+    totalMovesCount = 0
     let reader = getInputReader()
     reader.on('line', (line) => {
-        let suggestedMove = fight(line, movesCount)
-        process.stdout.write(suggestedMove); 
+        let suggestedMove = fight(line, myMovesCount)
+        process.stdout.write(suggestedMove);
+        totalMovesCount += 2
     });
 }
 main()
