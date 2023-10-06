@@ -1,5 +1,6 @@
 
-let { gridState, freeCorners, pieceNames } = require('./constants');
+let { gridState, pieceNames } = require('./constants');
+var freeCorners = []
 function printTable() {
     let dict = {}
     Object.keys(gridState).map((eachItem) => {
@@ -75,8 +76,7 @@ function checkIfCornerStillExists(corner) {
     })
     return !isNotCorner
 }
-let moveCountTemp = 0
-function fillGridOrg(move, pieceToBeMoved, isMoveByUs, updateGrid, validateEachPoint) {
+function fillGridOrg(move, pieceToBeMoved, isMoveByUs, updateGrid, validateEachPoint, myMovesCount) {
     // set updateGrid as false to run a check
     let centreOfPieceInX = parseInt(pieceToBeMoved.centre[0])
     let centreOfPieceInY = parseInt(pieceToBeMoved.centre[1])
@@ -95,17 +95,15 @@ function fillGridOrg(move, pieceToBeMoved, isMoveByUs, updateGrid, validateEachP
         pointsToChange.push(pointBeingChaged)
         console.log(pointBeingChaged)
         if (isMoveByUs && validateEachPoint) {
-            let returnValue = checkIfValidPoint(pointBeingChaged, updateGrid)
+            let returnValue = checkIfValidPoint(pointBeingChaged, true)
             if (returnValue.cornerConnectionExist) {
                 cornerConnectionExist = true
             }
-            if (updateGrid) {
-                arrOfCornerConnections = arrOfCornerConnections.concat(returnValue.arrOfCornerConnections)
-            }
+            arrOfCornerConnections = arrOfCornerConnections.concat(returnValue.arrOfCornerConnections)
         }
     })
     console.log(arrOfCornerConnections)
-    if (validateEachPoint && !cornerConnectionExist) {
+    if (validateEachPoint && myMovesCount !== 0 && !cornerConnectionExist) {
         throw (`No corner connection exists for the piece id ${pieceToBeMoved.id}`)
     }
 
@@ -114,6 +112,8 @@ function fillGridOrg(move, pieceToBeMoved, isMoveByUs, updateGrid, validateEachP
             updateState(pointBeingChaged, isMoveByUs)
         })
         printTable()
+    }
+    if (isMoveByUs && updateGrid) {
         let filteredArr = [...new Set(arrOfCornerConnections)]
         let filteredCorners = filteredArr.filter((corner) => {
             return checkIfCornerStillExists(corner)
@@ -145,7 +145,7 @@ function flipThePiece(pieceToBeMoved) {
     pieceToBeMoved.center = pieceToBeMoved?.flipped?.center ?? pieceToBeMoved.center
     return pieceToBeMoved
 }
-function fillGrid(data, isMoveByUs, validateEachPoint) {
+function fillGrid(data, isMoveByUs, validateEachPoint, myMovesCount) {
     const move = getProperDataFromINput(data)
     console.log("move", move)
     let pieceToBeMoved = pieceNames.filter(piece => piece.id === move.id)?.[0]
@@ -155,24 +155,124 @@ function fillGrid(data, isMoveByUs, validateEachPoint) {
         pieceToBeMoved = flipThePiece(pieceToBeMoved)
     }
 
-    fillGridOrg(move, pieceToBeMoved, isMoveByUs, true, validateEachPoint)
+    fillGridOrg(move, pieceToBeMoved, isMoveByUs, true, validateEachPoint, myMovesCount)
 }
 function checkIfGridPointIsUsed(row, col) {
     return gridState[`${row}_${col}`] !== 0
+}
+function checkIfWorksValidPoint(pointToCheck, shouldSaveCorners) {
+    let arrOfCornerConnections = []
+    let cornerConnectionExist = false
+    let [rowPoint, colPoint] = pointToCheck.split("_")
+    rowPoint = parseInt(rowPoint)
+    colPoint = parseInt(colPoint)
+    if (gridState[`${rowPoint}_${colPoint}`] !== 0) {
+        throw ("Point not empty")
+    }
+    let rowPointConsidered
+    let colPointConsidered
+    for (let i = -1; i <= 1; i++) {
+        rowPointConsidered = rowPoint + i
+        for (let j = -1; j <= 1; j++) {
+            colPointConsidered = colPoint + j
+            if (colPointConsidered < 0 || rowPointConsidered < 0 || colPointConsidered > 13 || rowPointConsidered > 13) {
+                continue
+            }
+            if ((i == 0 || j == 0) // Edges
+                && gridState[`${rowPointConsidered}_${colPointConsidered}`] === 1
+            ) {
+                throw (`Edge exist for ${rowPoint}_${colPoint} at ${rowPointConsidered}_${colPointConsidered}`)
+            } else {
+                if (gridState[`${rowPointConsidered}_${colPointConsidered}`] === 1) {
+                    cornerConnectionExist = true
+                    console.log(`corner connection exists for the piece at ${rowPointConsidered}_${colPointConsidered}`)
+                } else if (shouldSaveCorners) {
+                    pointBeingChecked = `${rowPoint}_${colPoint}` //4_5
+                    freeCornerPoint = `${rowPointConsidered}_${colPointConsidered}` //5_6
+                    yCorner = rowPoint - rowPointConsidered > 0 ? "T" : "B"
+                    xCorner = colPoint - colPointConsidered > 0 ? "L" : "R"
+                    arrOfCornerConnections.push(pointBeingChecked + "_" + yCorner + "_" + xCorner)
+                }
+            }
+        }
+    }
+    return { validPoint: true, cornerConnectionExist, arrOfCornerConnections }
+}
+function checkIfWorks(move, pieceToBeMoved) {
+    // set updateGrid as false to run a check
+    let centreOfPieceInX = parseInt(pieceToBeMoved.centre[0])
+    let centreOfPieceInY = parseInt(pieceToBeMoved.centre[1])
+    centreOfPieceInX = handleNegativeIndexing(centreOfPieceInX)
+    centreOfPieceInY = handleNegativeIndexing(centreOfPieceInY)
+
+    let pointsToChange = []
+    let cornerConnectionExist = false
+    let arrOfCornerConnections = []
+    pieceToBeMoved.data.forEach((point) => {
+        let currentPointinX = handleNegativeIndexing(parseInt(point[0]))
+        let currentPointinY = handleNegativeIndexing(parseInt(point[1]))
+        let pointsToMoveInRow = centreOfPieceInX - currentPointinX
+        let pointsToMoveInCol = centreOfPieceInY - currentPointinY
+        let pointBeingChaged = `${move.row - pointsToMoveInRow}_${move.col - pointsToMoveInCol}`
+        pointsToChange.push(pointBeingChaged)
+        console.log(pointBeingChaged)
+        checkIfWorksValidPoint(pointBeingChaged, true)
+    })
+    return true
+}
+
+function tryEachElement(cornersWeCanUse) {
+    for (let i = 0; i < cornersWeCanUse.length; i++) {
+        let splitValue = cornersWeCanUse[i].split("_")
+        let row = parseInt(splitValue[0]) + splitValue[2] === "B" ? 1 : -1
+        let col = parseInt(splitValue[1]) + splitValue[3] === "R" ? 1 : -1
+        let move = `${row} ${col}`
+        for (let j = 0; j < pieceNames.length; j++) {
+            try {
+                if(checkIfWorks(move, pieceNames[j])){
+                    pieceNames[j].used = true
+                    return move
+                }
+            }
+            catch {
+                continue;
+            }
+        }
+    }
 }
 
 let logic
 function fightWithLogic() {
     console.log(freeCorners)
+    let cornersToUse = []
+    let maxCornerFound;
+    freeCorners.forEach((corner) => {
+        let cornerData = corner.split("_")
+        pointLocationConsidered = (logic[0] === "down" || logic[0] === "up") ? parseInt(cornerData[0]) : parseInt(cornerData[1])
+        if (maxCornerFound === undefined) {
+            maxCornerFound = pointLocationConsidered
+        } else {
+            if (maxCornerFound < pointLocationConsidered) {
+                maxCornerFound = pointLocationConsidered
+            }
+        }
+    })
+    console.log(maxCornerFound)
+    let cornersWeCanUse = freeCorners.find((corner) => {
+        let indexToLookAt = (logic[0] === "down" || logic[0] === "up") ? 0 : 1
+        return corner[indexToLookAt] == maxCornerFound
+    })
+    tryEachElement(cornersWeCanUse)
 }
 
-function fight(input, myMovesCount) {
+let myMovesCount = 0
+function fight(input) {
     let moveSuggested
     if (input === "MAKE_MOVE") {
         try {
             moveSuggested = "5 0 0 8 4"
             logic = ["down", "right"]
-            fillGrid(moveSuggested, true, false)
+            fillGrid(moveSuggested, true, true, myMovesCount)
         } catch (e) {
             console.log("Shouldn't happen")
             console.log(e)
@@ -181,18 +281,18 @@ function fight(input, myMovesCount) {
     } else {
         if (input[0] === "O") {
             let opponentMove = input.replace(/OPPONENT_MOVE\s*/, "")
-            fillGrid(opponentMove, false, false)
+            fillGrid(opponentMove, false, false, myMovesCount)
         }
         //This is totally different check. should not use else
         if (myMovesCount === 0) {
-            if (!checkIfGridPointIsUsed(5, 5)) {
+            if (!checkIfGridPointIsUsed(4, 4)) {
                 moveSuggested = "5 0 2 4 4"
                 logic = ["down", "right"]
             } else {
-                moveSuggested = "5 0 0 8 8"
+                moveSuggested = "5 0 0 9 9"
                 logic = ["up", "left"]
             }
-            fillGrid(moveSuggested, true, true)
+            fillGrid(moveSuggested, true, true, myMovesCount)
         } else {
             fightWithLogic()
         }
@@ -211,11 +311,10 @@ function getInputReader() {
     return reader
 }
 function main() {
-    myMovesCount = 0
     totalMovesCount = 0
     let reader = getInputReader()
     reader.on('line', (line) => {
-        let suggestedMove = fight(line, myMovesCount)
+        let suggestedMove = fight(line)
         process.stdout.write(suggestedMove);
         totalMovesCount += 2
     });
