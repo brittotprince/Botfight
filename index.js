@@ -1,6 +1,5 @@
 
-const { gridState, pieceNames } = require('./constants');
-console.table(gridState)
+let { gridState, freeCorners, pieceNames } = require('./constants');
 function printTable() {
     let dict = {}
     Object.keys(gridState).map((eachItem) => {
@@ -47,7 +46,7 @@ function checkIfValidPoint(pointToCheck, shouldSaveCorners) {
             if ((i == 0 || j == 0) // Edges
                 && gridState[`${rowPointConsidered}_${colPointConsidered}`] === 1
             ) {
-                throw (`Edge exits for ${rowPoint}_${colPoint} at ${rowPointConsidered}_${colPointConsidered}`)
+                throw (`Edge exist for ${rowPoint}_${colPoint} at ${rowPointConsidered}_${colPointConsidered}`)
             } else {
                 if (gridState[`${rowPointConsidered}_${colPointConsidered}`] === 1) {
                     cornerConnectionExist = true
@@ -66,13 +65,17 @@ function checkIfValidPoint(pointToCheck, shouldSaveCorners) {
 }
 function checkIfCornerStillExists(corner) {
     let data = corner.split("_")
-    let rowIndex = data[0]
-    let colIndex = data[1]
-    let rowMove = data[0] === "T" ? -1 : 1
-    let colMove = data[1] === "L" ? -1 : 1
-    let pointToCheck = (`${rowIndex + rowMove}_${colIndex + colMove}`)
-    return gridState[pointToCheck] === 0
+    let rowIndex = parseInt(data[0])
+    let colIndex = parseInt(data[1])
+    let rowMove = data[2] === "T" ? -1 : 1
+    let colMove = data[3] === "L" ? -1 : 1
+    let pointToCheck = [`${rowIndex + rowMove}_${colIndex + colMove}`, `${rowIndex + rowMove}_${colIndex}`, `${rowIndex}_${colIndex + colMove}`]
+    let isNotCorner = pointToCheck.find((point) => {
+        return gridState[point] !== 0
+    })
+    return !isNotCorner
 }
+let moveCountTemp = 0
 function fillGridOrg(move, pieceToBeMoved, isMoveByUs, updateGrid, validateEachPoint) {
     // set updateGrid as false to run a check
     let centreOfPieceInX = parseInt(pieceToBeMoved.centre[0])
@@ -111,10 +114,12 @@ function fillGridOrg(move, pieceToBeMoved, isMoveByUs, updateGrid, validateEachP
             updateState(pointBeingChaged, isMoveByUs)
         })
         printTable()
-        arrOfCornerConnections.filter((corner) => {
+        let filteredArr = [...new Set(arrOfCornerConnections)]
+        let filteredCorners = filteredArr.filter((corner) => {
             return checkIfCornerStillExists(corner)
         })
-        console.log(arrOfCornerConnections)
+        freeCorners = freeCorners.concat(filteredCorners)
+        console.log(freeCorners)
     }
 }
 // function getNewCenter(pieceToBeMoved, oldData) {
@@ -156,12 +161,18 @@ function checkIfGridPointIsUsed(row, col) {
     return gridState[`${row}_${col}`] !== 0
 }
 
+let logic
+function fightWithLogic() {
+    console.log(freeCorners)
+}
+
 function fight(input, myMovesCount) {
     let moveSuggested
     if (input === "MAKE_MOVE") {
         try {
-            moveSuggested = "5 0 0 4 4"
-            fillGrid(moveSuggested, true, true)
+            moveSuggested = "5 0 0 8 4"
+            logic = ["down", "right"]
+            fillGrid(moveSuggested, true, false)
         } catch (e) {
             console.log("Shouldn't happen")
             console.log(e)
@@ -176,10 +187,14 @@ function fight(input, myMovesCount) {
         if (myMovesCount === 0) {
             if (!checkIfGridPointIsUsed(5, 5)) {
                 moveSuggested = "5 0 2 4 4"
+                logic = ["down", "right"]
             } else {
                 moveSuggested = "5 0 0 8 8"
+                logic = ["up", "left"]
             }
             fillGrid(moveSuggested, true, true)
+        } else {
+            fightWithLogic()
         }
     }
     myMovesCount += 1

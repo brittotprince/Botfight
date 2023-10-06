@@ -1,6 +1,6 @@
 const pieceNames = [
     {
-        id: 5, maxLength: 5, data: ["00", "10", "20", "30", "40"], centre: "40"
+        id: 5, maxLength: 5, data: ["00", "10", "20", "30", "40"], centre: "40", rotated: { 1: { data: ["00","01","02","03","04"], centre: "00" }, 2: { data: ["00",], centre: "" } }
     },
     {
         id: 10, maxLength: 4, data: ["00", "10", "11", "12", "13"], centre: "10", flipped: { data: ["00", "10", '19', '18', '17'], centre: "10" }
@@ -262,4 +262,4 @@ const gridState = {
     "13_13": 0
 
 }
-module.exports = { gridState, pieceNames ,freeCorners}
+module.exports = { gridState, pieceNames, freeCorners }
