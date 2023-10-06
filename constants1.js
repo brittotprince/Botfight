@@ -1,6 +1,7 @@
 const pieceNames = [
     {
         id: 5,
+        used: true,
         "maxLength": 5, "data": [
             "00",
             "10",
