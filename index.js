@@ -145,14 +145,21 @@ function flipThePiece(pieceToBeMoved) {
     pieceToBeMoved.center = pieceToBeMoved?.flipped?.center ?? pieceToBeMoved.center
     return pieceToBeMoved
 }
+function rotateThePiece(pieceToBeMoved,rotate){
+    pieceToBeMoved.data = pieceToBeMoved.rotated[rotate].data
+    pieceToBeMoved.centre = pieceToBeMoved.rotated[rotate].centre
+}
 function fillGrid(data, isMoveByUs, validateEachPoint, myMovesCount) {
     const move = getProperDataFromINput(data)
-    console.log("move", move)
+    // console.log("move", move)
     let pieceToBeMoved = pieceNames.filter(piece => piece.id === move.id)?.[0]
     pieceToBeMoved = { ...pieceToBeMoved }
-    console.log("pieceMoved", pieceToBeMoved)
+    // console.log("pieceMoved", pieceToBeMoved)
     if (move.flip) {
         pieceToBeMoved = flipThePiece(pieceToBeMoved)
+    }
+    if(move.rotate){
+        pieceToBeMoved = rotateThePiece(pieceToBeMoved,move.rotate)
     }
 
     fillGridOrg(move, pieceToBeMoved, isMoveByUs, true, validateEachPoint, myMovesCount)
